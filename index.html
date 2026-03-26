@@ -1,0 +1,182 @@
+ <!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<title>Examen Evolución - Teorías Evolutivas</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+
+<style>
+body{font-family:Arial;background:#f4f6f9;margin:0}
+.container{max-width:900px;margin:auto;background:white;padding:20px;margin-top:30px;border-radius:10px}
+h1{color:#002b5c}
+button{background:#002b5c;color:white;padding:10px;border:none;border-radius:5px;margin:5px;cursor:pointer}
+.timer{font-size:20px;color:#b30000;font-weight:bold}
+.question{margin:20px 0}
+.hidden{display:none}
+.nav{margin-top:10px}
+</style>
+</head>
+
+<body>
+
+<div class="container" id="inicio">
+<h1>Examen Evolución - Teorías</h1>
+<p>Nombre:</p>
+<input type="text" id="nombre">
+<p>Número de cuenta:</p>
+<input type="text" id="cuenta">
+<br><br>
+<button onclick="iniciar()">Comenzar examen</button>
+</div>
+
+<div class="container hidden" id="examen">
+<div class="timer" id="timer"></div>
+<div id="pregunta"></div>
+<div class="nav">
+<button onclick="anterior()">Anterior</button>
+<button onclick="siguiente()">Siguiente</button>
+<button onclick="finalizar()">Finalizar</button>
+</div>
+</div>
+
+<div class="container hidden" id="resultado"></div>
+
+<script>
+
+const preguntas = [
+
+{q:"¿Qué proponía Lamarck?",o:["Selección natural","Uso y desuso","Mutación","Deriva genética"],a:1},
+{q:"¿Quién propuso la herencia de caracteres adquiridos?",o:["Darwin","Lamarck","Mendel","Wallace"],a:1},
+{q:"Uso y desuso significa:",o:["Mutación","Desarrollo por uso","Selección","Deriva"],a:1},
+{q:"Ejemplo clásico de Lamarck:",o:["Pinzones","Jirafas","Bacterias","Humanos"],a:1},
+{q:"Problema de Lamarck:",o:["Correcto","Sin base genética","Muy moderno","Completo"],a:1},
+
+{q:"¿Quién propuso la selección natural?",o:["Darwin","Lamarck","Mendel","Watson"],a:0},
+{q:"Wallace contribuyó a:",o:["Mutación","Selección natural","ADN","Clonación"],a:1},
+{q:"Selección natural significa:",o:["Azar total","Sobrevive el mejor adaptado","Mutación","Uso"],a:1},
+{q:"Variación en población es:",o:["Igualdad","Diferencias","Mutación","Clonación"],a:1},
+{q:"Sobreproducción implica:",o:["Pocos organismos","Muchos organismos","Mutación","Equilibrio"],a:1},
+
+{q:"Lucha por la existencia es:",o:["Cooperación","Competencia","Mutación","Clonación"],a:1},
+{q:"Resultado de selección natural:",o:["Extinción total","Adaptación","Mutación","Clonación"],a:1},
+{q:"Ejemplo Darwin:",o:["Jirafas","Pinzones","Humanos","Bacterias"],a:1},
+{q:"Evolución ocurre en:",o:["Individuos","Poblaciones","Genes","Órganos"],a:1},
+{q:"Adaptación es:",o:["Intencional","Resultado evolutivo","Mutación","Error"],a:1},
+
+{q:"Teoría sintética combina:",o:["Lamarck","Genética y selección","Clonación","Mutación"],a:1},
+{q:"Mutación es:",o:["Cambio en ADN","Uso","Desuso","Selección"],a:0},
+{q:"Recombinación genética:",o:["Mutación","Mezcla de genes","Clonación","Uso"],a:1},
+{q:"Deriva genética es:",o:["Cambio al azar","Selección","Uso","Mutación"],a:0},
+{q:"Frecuencia génica es:",o:["Mutación","Proporción de genes","Clonación","Uso"],a:1},
+
+{q:"Neodarwinismo es:",o:["Lamarck","Teoría sintética","Mutación","Uso"],a:1},
+{q:"Selección natural actúa sobre:",o:["Genes directamente","Fenotipo","Mutación","ADN"],a:1},
+{q:"Variabilidad genética proviene de:",o:["Mutación","Uso","Desuso","Selección"],a:0},
+{q:"Individuos evolucionan:",o:["Sí","No","A veces","Siempre"],a:1},
+{q:"Poblaciones evolucionan:",o:["No","Sí","Nunca","A veces"],a:1},
+
+{q:"Teoría más aceptada:",o:["Lamarck","Sintética","Mutación","Clonación"],a:1},
+{q:"Selección natural es:",o:["Azar","No azarosa","Mutación","Uso"],a:1},
+{q:"Mutaciones son:",o:["Dirigidas","Aleatorias","Planeadas","Controladas"],a:1},
+{q:"Evolución implica:",o:["Cambio genético","Uso","Desuso","Clonación"],a:0},
+{q:"Base genética moderna:",o:["Lamarck","Mendel","Wallace","Darwin"],a:1}
+
+];
+
+let actual=0,respuestas=[],tiempos=[];
+let tiempoInicioPregunta=0;
+let totalTiempo=30*65;
+let timerInterval;
+let inicioExamen;
+
+function iniciar(){
+inicioExamen=Date.now();
+tiempoInicioPregunta=Date.now();
+document.getElementById("inicio").classList.add("hidden");
+document.getElementById("examen").classList.remove("hidden");
+timer();
+mostrar();
+}
+
+function timer(){
+timerInterval=setInterval(()=>{
+totalTiempo--;
+let h=Math.floor(totalTiempo/3600);
+let m=Math.floor((totalTiempo%3600)/60);
+let s=totalTiempo%60;
+document.getElementById("timer").innerText=
+`${h.toString().padStart(2,'0')}:${m.toString().padStart(2,'0')}:${s.toString().padStart(2,'0')}`;
+if(totalTiempo<=0) finalizar();
+},1000);
+}
+
+function mostrar(){
+let p=preguntas[actual];
+let html=`<div class='question'><h3>${actual+1}. ${p.q}</h3>`;
+p.o.forEach((op,i)=>{
+html+=`<label><input type="radio" name="op" value="${i}"> ${op}</label><br>`;
+});
+html+="</div>";
+document.getElementById("pregunta").innerHTML=html;
+tiempoInicioPregunta=Date.now();
+}
+
+function guardarTiempo(){
+let tiempo=(Date.now()-tiempoInicioPregunta)/1000;
+tiempos[actual]=tiempo;
+}
+
+function guardarRespuesta(){
+let sel=document.querySelector('input[name="op"]:checked');
+if(sel) respuestas[actual]=parseInt(sel.value);
+}
+
+function siguiente(){
+guardarTiempo(); guardarRespuesta();
+if(actual<preguntas.length-1){actual++;mostrar();}
+}
+
+function anterior(){
+guardarTiempo(); guardarRespuesta();
+if(actual>0){actual--;mostrar();}
+}
+
+function finalizar(){
+clearInterval(timerInterval);
+guardarTiempo(); guardarRespuesta();
+
+let correctas=0;
+preguntas.forEach((p,i)=>{
+if(respuestas[i]==p.a) correctas++;
+});
+
+let tiempoTotal=(Date.now()-inicioExamen)/1000;
+
+let res=`<h2>Resultados</h2>
+<p>Nombre: ${document.getElementById("nombre").value}</p>
+<p>Cuenta: ${document.getElementById("cuenta").value}</p>
+<p>Calificación: ${(correctas/preguntas.length*10).toFixed(2)}</p>
+<p>Tiempo total: ${tiempoTotal.toFixed(2)} s</p>`;
+
+preguntas.forEach((p,i)=>{
+res+=`<p>${i+1}. Tiempo: ${tiempos[i] ? tiempos[i].toFixed(2) : 0} s</p>`;
+});
+
+res+=`<button onclick="pdf()">Descargar PDF</button>`;
+
+document.getElementById("examen").classList.add("hidden");
+document.getElementById("resultado").classList.remove("hidden");
+document.getElementById("resultado").innerHTML=res;
+}
+
+function pdf(){
+const {jsPDF}=window.jspdf;
+let doc=new jsPDF();
+doc.text(document.getElementById("resultado").innerText,10,10);
+doc.save("resultado.pdf");
+}
+
+</script>
+
+</body>
+</html>
